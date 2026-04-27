@@ -1,0 +1,85 @@
+name: Firmware Build
+
+on: push
+
+jobs:
+  build:
+    name: Build firmware
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: arm-none-eabi-gcc GNU Arm Embedded Toolchain
+        uses: carlosperate/arm-none-eabi-gcc-action@v1.12.3
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13' 
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Cache pico-sdk
+        id: cache-pico-sdk
+        uses: actions/cache@v5
+        with:
+          path: pico-sdk
+          key: pico-sdk-2.2.0
+
+      - name: Checkout pico-sdk/2.2.0
+        if: steps.cache-pico-sdk.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: raspberrypi/pico-sdk
+          ref: 2.2.0
+          path: pico-sdk
+          submodules: recursive
+
+      - name: Cache picotool
+        id: cache-picotool
+        uses: actions/cache@v5
+        with:
+          path: picotool
+          key: picotool
+
+      - name: Build Firmware
+        id: build
+        env:
+          PICO_SDK_PATH: ${{github.workspace}}/pico-sdk
+          PICO_COMPILER: arm-none-eabi-gcc
+          PICOTOOL_FETCH_FROM_GIT_PATH: ${{github.workspace}}/picotool
+          SOURCE_DIR: src
+          OUTPUT_DIR: build
+          MAKEFILES_GENERATOR: "Unix Makefiles"
+          CMAKE_ARGS: ""
+        run: |
+          set -e
+
+          mkdir "$OUTPUT_DIR" && cd "$OUTPUT_DIR"
+          cmake -S "$GITHUB_WORKSPACE/$SOURCE_DIR" -B "$GITHUB_WORKSPACE/$OUTPUT_DIR" -G "$MAKEFILES_GENERATOR" $CMAKE_ARGS
+
+          echo "Building project..."
+          make -j$(nproc)
+
+          echo "output_dir=$OUTPUT_DIR" >> $GITHUB_OUTPUT
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: build_artifacts
+          path: |
+            ${{steps.build.outputs.output_dir}}/*.uf2
+            ${{steps.build.outputs.output_dir}}/*.elf
+            ${{steps.build.outputs.output_dir}}/*.elf.map
+            ${{steps.build.outputs.output_dir}}/*.dis
+
+      - name: Upload UF2
+        uses: actions/upload-artifact@v7
+        with:
+          name: firmware
+          path: ${{steps.build.outputs.output_dir}}/*.uf2
+          archive: false

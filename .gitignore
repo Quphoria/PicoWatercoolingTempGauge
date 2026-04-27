@@ -1,0 +1,13 @@
+# My files
+.vscode/
+
+# CMake build dir
+build
+
+# Firmware files
+**/*.uf2
+
+# Python stuff
+**/env
+**/__pycache__
+
