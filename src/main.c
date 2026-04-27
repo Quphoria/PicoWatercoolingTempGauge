@@ -172,7 +172,7 @@ int main() {
 static void process_command(const char *cmd) {
     if (strcmp(cmd, "update") == 0) {
         printf("Entering Bootloader...\n");
-        show_popup_centered(64, 32, 2, 1000, 6, 2, "Update\n Mode");
+        show_popup_centered(63, 31, 2, 1000, 6, 2, "Update\n Mode");
         refresh_display();
         sleep_ms(100);
         enter_bootloader();
