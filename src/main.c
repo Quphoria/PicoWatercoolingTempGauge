@@ -119,8 +119,10 @@ int main() {
     while (true) {
         alive = true;
 
-        int ch = getchar_timeout_us(0);
-        if (ch != PICO_ERROR_TIMEOUT) {
+        while (true) {
+            int ch = getchar_timeout_us(0);
+            if (ch == PICO_ERROR_TIMEOUT) break;
+
             char c = ch;
             if (cmd_len >= sizeof(cmd_buf)) {
                 printf("Error: Command buffer overflow\n");
