@@ -12,8 +12,6 @@
 
 #include "display.h"
 
-#include "Pix32_Font.h"
-
 #define WATCHDOG_TIMEOUT_MS 2000
 #define WATCHDOG_UPDATE_TIMER_MS 500
 
@@ -174,7 +172,7 @@ int main() {
 static void process_command(const char *cmd) {
     if (strcmp(cmd, "update") == 0) {
         printf("Entering Bootloader...\n");
-        show_popup(64-(6*Pix32_Font[1]), 32-(2*Pix32_Font[0]), 2, 1000, "Update\nMode");
+        show_popup_centered(64, 32, 2, 1000, 6, 2, "Update\n Mode");
         refresh_display();
         sleep_ms(100);
         enter_bootloader();
