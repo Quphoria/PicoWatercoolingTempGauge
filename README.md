@@ -1,5 +1,7 @@
 # Pico Watercooling Temperature Gauge
 
+[![Firmware Build](https://github.com/Quphoria/PicoWatercoolingTempGauge/actions/workflows/firmware_build.yml/badge.svg)](https://github.com/Quphoria/PicoWatercoolingTempGauge/actions/workflows/firmware_build.yml)
+
 Temperature Gauge for Barrow TCWDL-V1 10k NTC Watercooling Temperature sensor.
 
 ## Firmware Update
