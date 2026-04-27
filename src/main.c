@@ -75,6 +75,7 @@ static float voltage_to_temp(float voltage) {
 }
 
 int main() {
+    sleep_ms(500); // Wait for usb to disconnect before connecting
     stdio_init_all();
 
     printf("\n\n\n\n\n");
