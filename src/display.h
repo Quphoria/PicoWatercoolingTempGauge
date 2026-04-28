@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 // Use SH1106 instead of SSD1306
-// #define SH1106
+#define SH1106
 
 void init_display(void);
 void refresh_display(void);
