@@ -74,6 +74,8 @@ static float voltage_to_temp(float voltage) {
     return T;
 }
 
+static bool logging_enabled = false;
+
 int main() {
     sleep_ms(500); // Wait for usb to disconnect before connecting
     stdio_init_all();
@@ -123,6 +125,7 @@ int main() {
             if (ch == PICO_ERROR_TIMEOUT) break;
 
             char c = ch;
+            putchar(c); // Echo character
             if (cmd_len >= sizeof(cmd_buf)) {
                 printf("Error: Command buffer overflow\n");
                 cmd_len = 0;
@@ -161,7 +164,9 @@ int main() {
 
             const float t = voltage_to_temp(v);
 
-            printf("V=%0.2fV T=%0.1f*C\n", v, t);
+            if (logging_enabled) {
+                printf("V=%0.3fV T=%0.1f*C\n", v, t);
+            }
 
             update_temp(t);
         }
@@ -177,6 +182,12 @@ static void process_command(const char *cmd) {
         refresh_display();
         sleep_ms(100);
         enter_bootloader();
+    } else if (strcmp(cmd, "log_on") == 0) {
+        printf("Logging Enabled\n");
+        logging_enabled = true;
+    } else if (strcmp(cmd, "log_off") == 0) {
+        printf("Logging Disabled\n");
+        logging_enabled = false;
     } else {
         printf("Unknown command: %s\n", cmd);
     }
