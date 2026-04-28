@@ -131,12 +131,10 @@ int main() {
                 cmd_len = 0;
             } else if (c == '\n' || c == '\r') {
                 printf("\n");
-                // Process command if not empty
-                if (cmd_len > 0) {
-                    cmd_buf[cmd_len] = 0;
-                    cmd_len = 0;
-                    process_command(cmd_buf);
-                }
+                // Process command (will print help prompt if empty)
+                cmd_buf[cmd_len] = 0;
+                cmd_len = 0;
+                process_command(cmd_buf);
             } else if (c == '\b') {
                 // Backspace
                 if (cmd_len > 0) cmd_len--;
@@ -195,13 +193,15 @@ static void process_command(const char *cmd) {
         logging_enabled = false;
     } else if (strcmp(cmd, "help") == 0) {
         printf("Available comamands:\n"
-               "- update : Enters the bootloader for updating firmware\n"
-               "- log_on : Enables voltage/temperature logging\n"
-               "- log_off : Disables voltage/temperature logging\n"
-               "- help : Prints this help message\n"
+               "  update    - Enters the bootloader for updating firmware\n"
+               "  log_on    - Enables voltage/temperature logging\n"
+               "  log_off   - Disables voltage/temperature logging\n"
+               "  help      - Prints this help message\n"
         );
     } else {
-        printf("Unknown command: %s\n", cmd);
+        if (strlen(cmd) != 0) {
+            printf("Unknown command: %s\n", cmd);
+        }
         printf("Type 'help' to view a list of valid commands\n");
     }
 }
