@@ -11,6 +11,7 @@
 #include "hardware/adc.h"
 
 #include "display.h"
+#include "settings.h"
 
 #define WATCHDOG_TIMEOUT_MS 2000
 #define WATCHDOG_UPDATE_TIMER_MS 500
@@ -94,15 +95,21 @@ int main() {
 
     add_repeating_timer_ms(WATCHDOG_UPDATE_TIMER_MS, watchdog_update_timer_callback, NULL, &watchdog_update_timer);
 
-    sleep_ms(500);
-
     // Start watchdog
     watchdog_enable(WATCHDOG_TIMEOUT_MS, true); // Pause watchdog on debug
     
+    load_settings();
+
     printf("Initializing peripherals...\n");
     setup_i2c();
     init_display();
     adc_init();
+
+#ifndef SH1106
+    if (settings.disp_contrast == 0) {
+        show_popup_centered(63, 31, 2, 2000, 7, 2, "Display\n  Off");
+    }
+#endif
 
     adc_gpio_init(TEMP_SENSOR_PIN);
     adc_select_input(ADC_CHAN);
@@ -191,12 +198,30 @@ static void process_command(const char *cmd) {
     } else if (strcmp(cmd, "log_off") == 0) {
         printf("Logging Disabled\n");
         logging_enabled = false;
+    } else if (strcmp(cmd, "contrast") == 0) {
+        printf("Contrast: %d\n", settings.disp_contrast);
+    } else if (strstr(cmd, "contrast ") == cmd) {
+        int x;
+        sscanf(cmd, "contrast %d", &x);
+        if (x < 0 || x > 0xff) {
+            printf("Error: Value must be between 0 and 255\n");
+        } else {
+            settings.disp_contrast = x;
+            save_settings();
+        }
+        update_contrast();
+    } else if (strcmp(cmd, "defaults") == 0) {
+        load_default_settings();
+        save_settings();
     } else if (strcmp(cmd, "help") == 0) {
         printf("Available comamands:\n"
-               "  update    - Enters the bootloader for updating firmware\n"
-               "  log_on    - Enables voltage/temperature logging\n"
-               "  log_off   - Disables voltage/temperature logging\n"
-               "  help      - Prints this help message\n"
+               "  update            - Enters the bootloader for updating firmware\n"
+               "  log_on            - Enables voltage/temperature logging\n"
+               "  log_off           - Disables voltage/temperature logging\n"
+               "  contrast          - Gets the current display contrast\n"
+               "  contrast [0-255]  - Sets the current display contrast\n"
+               "  defaults          - Loads default settings\n"
+               "  help              - Prints this help message\n"
         );
     } else {
         if (strlen(cmd) != 0) {

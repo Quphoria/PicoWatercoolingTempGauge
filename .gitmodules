@@ -1,3 +1,6 @@
 [submodule "src/pico-ssd1306-sh1106"]
 	path = src/pico-ssd1306-sh1106
 	url = https://github.com/Quphoria/pico-ssd1306-sh1106.git
+[submodule "src/pico-kvstore"]
+	path = src/pico-kvstore
+	url = https://github.com/oyama/pico-kvstore.git

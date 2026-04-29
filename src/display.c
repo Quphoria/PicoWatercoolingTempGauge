@@ -7,6 +7,7 @@
 #include "ssd1306.h"
 
 #include "display.h"
+#include "settings.h"
 
 #include "Pix32_Font.h"
 #include "Pix32_Inv_Font.h"
@@ -46,19 +47,17 @@ void init_display(void) {
     disp.is_sh1106=true;
 #endif
     ssd1306_init(&disp, 128, 64, 0x3C, i2c0);
-    /* Possible changes to init cmds
-    
-    SET_CONTRAST,
-    0xCF, // From https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp#L598
-    ...
-    SET_VCOM_DESEL,
-    0x40, // From https://github.com/adafruit/Adafruit_SSD1306/blob/master/Adafruit_SSD1306.cpp#L618
-    */
+    ssd1306_contrast(&disp, settings.disp_contrast);
+    printf("Contrast: 0x%02x\n", settings.disp_contrast);
 
     dirty = true;
     ssd1306_clear(&disp);
     // ssd1306_draw_square(&disp, 0, 0, 128, 64);
     ssd1306_show(&disp);
+}
+
+void update_contrast(void) {
+    ssd1306_contrast(&disp, settings.disp_contrast);
 }
 
 void show_popup(uint8_t x, uint8_t y, uint8_t scale, uint16_t show_time_ms, const char *msg) {

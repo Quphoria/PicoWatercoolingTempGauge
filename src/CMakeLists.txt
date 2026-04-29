@@ -17,6 +17,7 @@ pico_sdk_init()
 add_executable(${NAME}
         main.c
         display.c
+        settings.c
         pico-ssd1306-sh1106/ssd1306.c
 )
 
@@ -37,6 +38,10 @@ target_link_libraries(${NAME} PRIVATE
 # Font generation
 include(custom_font/fonts.cmake)
 target_link_libraries(${NAME} PRIVATE fonts)
+
+# Settings storage
+add_subdirectory(pico-kvstore)
+target_link_libraries(${NAME} PRIVATE kvstore kvstore_default)
 
 # enable USB UART
 pico_enable_stdio_usb(${NAME} 1)
