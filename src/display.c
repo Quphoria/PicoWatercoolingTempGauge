@@ -20,6 +20,9 @@ static ssd1306_t disp;
 static bool dirty = true;
 static struct {
     int temperature_10mC;
+    uint8_t graph[128];
+    uint8_t graph_ptr;
+    uint8_t graph_length;
     struct {
         char msg[32];
         uint8_t x;
@@ -34,11 +37,31 @@ static void draw_string(ssd1306_t *p, uint32_t x, uint32_t y, uint32_t scale, co
 static void draw_string_with_inverts(ssd1306_t *p, uint32_t x, uint32_t y, uint32_t scale, const char *s);
 
 static void draw_temp();
+static void draw_graph();
+
+static const int graph_min_10mC = 15 * 100;
+static const int graph_step_10mC = 100;
+static const int graph_interval_ms = 1000;
+static absolute_time_t graph_delay = 0;
 
 void update_temp(float temp_c) {
     int temp_10mC = 100 * temp_c;
     dirty |= st.temperature_10mC != temp_10mC;
     st.temperature_10mC = temp_10mC;
+
+    if (absolute_time_diff_us(get_absolute_time(), graph_delay) < 0) {
+        graph_delay = make_timeout_time_ms(graph_interval_ms);
+        int val = (temp_10mC - graph_min_10mC) / graph_step_10mC;
+        if (val < 0) val = 0;
+        else if (val > 63) val = 63;
+        st.graph[st.graph_ptr++] = val;
+        if ((st.graph_ptr) > sizeof(st.graph)) {
+            st.graph_ptr = 0;
+        }
+        if (st.graph_length < sizeof(st.graph)) st.graph_length++;
+
+        dirty = settings.graph_en; // Simplest way to update the graph
+    }
 }
 
 void init_display(void) {
@@ -102,6 +125,7 @@ void refresh_display(void) {
     ssd1306_clear(&disp);
 
     draw_temp();
+    if (settings.graph_en) draw_graph();
     
     ssd1306_show(&disp);
 }
@@ -158,4 +182,15 @@ static void draw_temp() {
     uint8_t len = strlen(s);
 
     draw_string(&disp, 64-(strlen(s)*Pix32_Font[1]), 32-Pix32_Font[0], 2, Pix32_Font, s);
+}
+
+static void draw_graph() {
+    for (uint8_t i = 0; i < st.graph_length; i++) {
+        int j = st.graph_ptr - i - 1;
+        if (j < 0) j += sizeof(st.graph);
+        
+        uint8_t val = st.graph[j];
+
+        ssd1306_draw_pixel(&disp, 127-i, 63-val);
+    }
 }

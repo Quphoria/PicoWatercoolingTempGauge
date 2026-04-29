@@ -9,7 +9,8 @@
 
 static const settings_t default_settings = {
     .ver = 0, // Settings version, increment when changing settings struct
-    .disp_contrast = 0xff
+    .disp_contrast = 0xff,
+    .graph_en = 0,
 };
 
 settings_t settings = default_settings;

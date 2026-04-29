@@ -210,6 +210,12 @@ static void process_command(const char *cmd) {
             save_settings();
         }
         update_contrast();
+    } else if (strcmp(cmd, "graph 0") == 0) {
+        settings.graph_en = 0;
+        save_settings();
+    } else if (strcmp(cmd, "graph 1") == 0) {
+        settings.graph_en = 1;
+        save_settings();
     } else if (strcmp(cmd, "defaults") == 0) {
         load_default_settings();
         save_settings();
@@ -220,6 +226,7 @@ static void process_command(const char *cmd) {
                "  log_off           - Disables voltage/temperature logging\n"
                "  contrast          - Gets the current display contrast\n"
                "  contrast [0-255]  - Sets the current display contrast\n"
+               "  graph [0-1]       - Enables/Disables graphing\n"
                "  defaults          - Loads default settings\n"
                "  help              - Prints this help message\n"
         );
