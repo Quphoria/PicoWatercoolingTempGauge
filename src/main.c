@@ -226,7 +226,7 @@ int main() {
 static void process_command(const char *cmd) {
     if (strcmp(cmd, "update") == 0) {
         set_status_led_error(false);
-        set_status_led(0x80, 0, 0xc0, false);
+        set_status_led(0x60, 0, 0x20, false);
         printf("Entering Bootloader...\n");
         show_popup_centered(63, 31, 2, 1000, 6, 2, "Update\n Mode");
         refresh_display();
