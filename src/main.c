@@ -225,10 +225,12 @@ int main() {
 
 static void process_command(const char *cmd) {
     if (strcmp(cmd, "update") == 0) {
+        set_status_led_error(false);
+        set_status_led(0x80, 0, 0xc0, false);
         printf("Entering Bootloader...\n");
         show_popup_centered(63, 31, 2, 1000, 6, 2, "Update\n Mode");
         refresh_display();
-        sleep_ms(100);
+        sleep_ms(150); // Long enough for status led to update
         enter_bootloader();
     } else if (strcmp(cmd, "log_on") == 0) {
         printf("Logging Enabled\n");
