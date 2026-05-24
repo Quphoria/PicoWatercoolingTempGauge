@@ -194,3 +194,7 @@ static void draw_graph() {
         ssd1306_draw_pixel(&disp, 127-i, 63-val);
     }
 }
+
+void reset_graph(void) {
+    st.graph_length = 0;
+}

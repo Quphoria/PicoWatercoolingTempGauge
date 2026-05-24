@@ -18,6 +18,7 @@ add_executable(${NAME}
         main.c
         display.c
         settings.c
+        status_led.c
         pico-ssd1306-sh1106/ssd1306.c
 )
 
@@ -31,6 +32,7 @@ target_link_libraries(${NAME} PRIVATE
         pico_stdlib
         pico_unique_id
         hardware_watchdog
+        hardware_pio
         hardware_i2c
         hardware_adc
 )

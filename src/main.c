@@ -10,9 +10,11 @@
 #include "hardware/watchdog.h"
 #include "hardware/adc.h"
 
+#include "status_led.h"
 #include "display.h"
 #include "settings.h"
 
+#define FIRMWARE_VERSION "1.0.1"
 #define WATCHDOG_TIMEOUT_MS 2000
 #define WATCHDOG_UPDATE_TIMER_MS 500
 
@@ -76,6 +78,7 @@ static float voltage_to_temp(float voltage) {
 }
 
 static bool logging_enabled = false;
+static absolute_time_t measure_delay;
 
 int main() {
     sleep_ms(500); // Wait for usb to disconnect before connecting
@@ -101,6 +104,7 @@ int main() {
     load_settings();
 
     printf("Initializing peripherals...\n");
+    init_status_led(pio0);
     setup_i2c();
     init_display();
     adc_init();
@@ -114,7 +118,7 @@ int main() {
     adc_gpio_init(TEMP_SENSOR_PIN);
     adc_select_input(ADC_CHAN);
 
-    absolute_time_t measure_delay = get_absolute_time();
+    measure_delay = get_absolute_time();
 
     char cmd_buf[32];
     uint8_t cmd_len = 0;
@@ -157,7 +161,7 @@ int main() {
         // sleep_ms(50);
 
         if (absolute_time_diff_us(get_absolute_time(), measure_delay) < 0) {
-            measure_delay = make_timeout_time_ms(100); // Measure every 100ms
+            measure_delay = make_timeout_time_ms(settings.measure_interval_ms); // Measure every 100ms
 
             // VREF
             //  | 
@@ -179,6 +183,40 @@ int main() {
             }
 
             update_temp(t);
+
+            set_status_led_error(t < -10 || t > 120); // Temperature goes -55 when open circuit, or 190 if short circuit
+
+            if (settings.led_brightness) {
+                uint8_t r = 0;
+                uint8_t g = 0;
+                uint8_t b = 0;
+                // 15 (blue) - 30 (cyan) - 45 (green) - 60 yellow - 75 (red)
+                // See: https://en.wikipedia.org/wiki/File:HSV-RGB-comparison.svg
+                if (t <= 15) {
+                    b = settings.led_brightness;
+                } else if (t < 30) { // 15-30
+                    float fr = (t - 15) / 15.0;
+                    g = settings.led_brightness * fr;
+                    b = settings.led_brightness;
+                } else if (t < 45) { // 30-45
+                    float fr = (45 - t) / 15.0;
+                    g = settings.led_brightness;
+                    b = settings.led_brightness * fr;
+                } else if (t < 60) { // 45-60
+                    float fr = (t - 45) / 15.0;
+                    r = settings.led_brightness * fr;
+                    g = settings.led_brightness;
+                } else if (t < 75) { // 60-75
+                    float fr = (75 - t) / 15.0;
+                    r = settings.led_brightness;
+                    g = settings.led_brightness * fr;
+                } else { // 75+
+                    r = settings.led_brightness;
+                }
+                set_status_led(r, g, b, false);
+            } else {
+                set_status_led(0, 0, 0, false);
+            }
         }
 
         refresh_display();
@@ -216,19 +254,54 @@ static void process_command(const char *cmd) {
     } else if (strcmp(cmd, "graph 1") == 0) {
         settings.graph_en = 1;
         save_settings();
+    } else if (strcmp(cmd, "graph reset") == 0) {
+        reset_graph();
+    } else if (strcmp(cmd, "graph") == 0) {
+        printf("Graph: %d\n", settings.graph_en);
+    } else if (strcmp(cmd, "led") == 0) {
+        printf("LED: %d\n", settings.led_brightness);
+    } else if (strstr(cmd, "led ") == cmd) {
+        int x;
+        sscanf(cmd, "led %d", &x);
+        if (x < 0 || x > 0xff) {
+            printf("Error: Value must be between 0 and 255\n");
+        } else {
+            settings.led_brightness = x;
+            save_settings();
+        }
+    } else if (strcmp(cmd, "rate") == 0) {
+        printf("Rate: %d\n", settings.measure_interval_ms);
+    } else if (strstr(cmd, "rate ") == cmd) {
+        int x;
+        sscanf(cmd, "rate %d", &x);
+        if (x < 25 || x > 15000) {
+            printf("Error: Value must be between 25 and 15000\n");
+        } else {
+            settings.measure_interval_ms = x;
+            save_settings();
+            measure_delay = make_timeout_time_ms(settings.measure_interval_ms);
+        }
     } else if (strcmp(cmd, "defaults") == 0) {
         load_default_settings();
         save_settings();
     } else if (strcmp(cmd, "help") == 0) {
-        printf("Available comamands:\n"
+        printf("Firmware: " FIRMWARE_VERSION "\n%s"
+               "Available comamands:\n"
                "  update            - Enters the bootloader for updating firmware\n"
                "  log_on            - Enables voltage/temperature logging\n"
                "  log_off           - Disables voltage/temperature logging\n"
                "  contrast          - Gets the current display contrast\n"
                "  contrast [0-255]  - Sets the current display contrast\n"
+               "  graph             - Gets the graphing enable state\n"
                "  graph [0-1]       - Enables/Disables graphing\n"
+               "  graph reset       - Resets the graph\n"
+               "  led               - Gets the current led brightness\n"
+               "  led [0-255]       - Sets the current led brightness\n"
+               "  rate              - Gets the measurement interval in ms\n"
+               "  rate [25+]        - Sets the measurement interval in ms\n"
                "  defaults          - Loads default settings\n"
-               "  help              - Prints this help message\n"
+               "  help              - Prints this help message\n",
+               settings_invalid ? "WARNING: Failed to load settings on startup\n" : ""
         );
     } else {
         if (strlen(cmd) != 0) {

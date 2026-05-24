@@ -14,4 +14,4 @@ void show_popup(uint8_t x, uint8_t y, uint8_t scale, uint16_t show_time_ms, cons
 void show_popup_centered(uint8_t x, uint8_t y, uint8_t scale, uint16_t show_time_ms, uint8_t w, uint8_t h, const char *msg);
 
 void update_temp(float temp_c);
-
+void reset_graph(void);
